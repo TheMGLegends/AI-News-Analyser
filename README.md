@@ -14,6 +14,12 @@ Users will then need to activate this virtual environment (Windows Command Promp
 .venv\Scripts\activate
 ```
 
+Users may run into issues with this command if running from PowerShell, use the following command if this happens:
+
+```python
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process; .\.venv\Scripts\Activate.ps1
+```
+
 Finally, users should install the required libraries which are stored in *requirements.txt*, like so:
 
 ```python
