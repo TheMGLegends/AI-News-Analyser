@@ -25,3 +25,9 @@ Finally, users should install the required libraries which are stored in *requir
 ```python
 pip install -r requirements.txt
 ```
+
+Now you can run the streamlit project using:
+
+```python
+streamlit run NewsAnalyser.py
+```
