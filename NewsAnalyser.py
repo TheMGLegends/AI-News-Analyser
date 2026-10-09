@@ -30,6 +30,7 @@ import streamlit as st
 # --------------------------------------------------------------------------- #
 
 SETTINGS_FILE: str = "settings.json"
+MARKET_OPPORTUNITIES_FILE: str = "market_opportunities.json"
 TIMESTAMP_FORMAT: str = "%d-%m-%Y"
 DEFAULT_FEED_URL: str = "http://feeds.bbci.co.uk/news/world/rss.xml"
 OLLAMA_URL: str = "http://localhost:11434"
@@ -59,7 +60,6 @@ class Settings:
     auto_run: bool = False
     interval: str = "00:15:00"
     save_analysis: bool = True
-    output_file: str = "market_opportunities"
     json_indent: int = 4
 
     @classmethod
@@ -259,10 +259,11 @@ def build_system_prompt(
 
     It is better to return fewer companies than weak or generic matches.
 
+    STRICT: Only include publicly listed companies with a valid, known stock ticker. If a company does not have a ticker, is private, fictional, or cannot be 
+    confidently verified, EXCLUDE it entirely. Never include explanations or placeholders instead. If no companies qualify, return an empty array [].
+
     Format:
     Full Company Name (**TICKER**)
-
-    Never invent companies or tickers.
 
     6. UPDATES
 
@@ -355,7 +356,7 @@ def analyse_headlines(headlines: list[str], settings: Settings) -> dict:
     headlines_block = "\n".join(f"- {headline}" for headline in headlines)
     timestamp = datetime.now().strftime(TIMESTAMP_FORMAT)
 
-    past_analysis = load_past_analysis(settings.output_file, settings.use_previous_analysis)
+    past_analysis = load_past_analysis(MARKET_OPPORTUNITIES_FILE, settings.use_previous_analysis)
     age_days = past_analysis_age_days(past_analysis)
 
     new_headlines = []
@@ -444,7 +445,6 @@ def render_sidebar(saved: Settings) -> tuple[Settings, bool]:
 
         with st.expander("**💾 Format Output**", expanded=True):
             save_analysis = st.toggle("**Save Analysis**", value=saved.save_analysis, on_change="ignore")
-            output_file = st.text_input("**Output File Name**", value=saved.output_file, on_change="ignore", help="Saved into the current working directory.")
             json_indent = st.number_input("**Indent Level (JSON)**", min_value=0, max_value=8, value=saved.json_indent, step=1, on_change="ignore")
 
         run_clicked = st.button("**Run News Analysis**", width="stretch")
@@ -460,7 +460,6 @@ def render_sidebar(saved: Settings) -> tuple[Settings, bool]:
         auto_run=auto_run,
         interval=interval.strftime("%H:%M:%S") if auto_run else saved.interval,
         save_analysis=save_analysis,
-        output_file=output_file if save_analysis else saved.output_file,
         json_indent=json_indent if save_analysis else saved.json_indent,
     )
     return settings, run_clicked
@@ -563,7 +562,7 @@ def run_analysis(settings: Settings) -> None:
 
         if settings.save_analysis:
             try:
-                path = save_analysis_to_disk(results, settings.output_file, settings.json_indent)
+                path = save_analysis_to_disk(results, MARKET_OPPORTUNITIES_FILE, settings.json_indent)
                 st.toast(f"Saved analysis to {path}", icon="💾")
             except Exception as e:
                 status_container.error(f"Error saving analysis to disk: {e}", icon="❌")
